@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title><%= locals.game.name %></title>
+</head>
+<body onload = "init()">
+<link rel="stylesheet" type="text/css" href="/static/GM_back.css"/>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="/static/js.cookie.js"></script>
+<script>
+GID = parseInt(<%= locals.GID %>);
+jsonObj = null;
+nowScene = 0;
+actions = [];
+cnt = 0;
+isDoing = false;
+
+function init(){
+    $('.message').hide();
+    $('.dontclick').hide();
+    $('.next').text("→");
+    $('.noSession').click(function(){
+        if(confirm("真的要把存檔丟給Pusheen嗎(´・ω・｀)")){
+            var path = '/game/'+GID + '/noSession';
+            $.post(path, function(){
+                alert('已經把存檔丟給Pusheen囉!');
+                window.location.reload();
+            });
+        }
+    });
+    loadScene(<%= locals.nowScene %>);
+}  
+
+function dialog(speaker, content){
+    $('.msg_box').empty();
+    $('<div>').addClass('msg_person').text(speaker).append('：').appendTo('.msg_box');
+    $('<div>').addClass('msg_content').text(content).appendTo('.msg_box');
+    $('.next').unbind("click");
+    $('.next').bind("click", function(){
+        cnt += 1;
+        doAction();
+    });
+    $('.dontclick').show();
+    $('.message').show();   
+}
+function doAction(){
+    isDoing = true;
+    var len = actions.length;
+    if(cnt >= len){
+        isDoing = false;
+        $('.message').hide();
+        $('.dontclick').hide();
+        return;
+    }
+    if(actions[cnt].type === 'message'){
+        var speaker = actions[cnt].speaker;
+        var content = actions[cnt].content;
+        dialog(speaker, content);
+    }
+    else if(actions[cnt].type === 'scene'){
+        var SID = actions[cnt].SID;
+        loadScene(SID);
+    }
+}
+
+function getAction(AID){
+    if(isNaN(parseInt(AID)) || parseInt(AID)==0) return;
+    var path = '/game/' + GID + '/scene/' + nowScene + '/action/' + AID;
+    $.post(path, function(obj){
+        var tmpAct = obj;
+        for(let i in tmpAct){
+            actions.push(tmpAct[i]);
+        }
+        if(!isDoing) doAction();
+    }, 'json');
+}
+
+function loadScene(scene){
+    var SID = parseInt(scene);
+    $.getJSON('/game/'+GID+'/scene/'+SID, function(obj){
+        jsonObj = obj;
+        console.log(jsonObj);
+        getAction(jsonObj.AID);
+        $('.now').remove();
+        $('.message').hide();
+        $('.dontclick').hide();
+        $('#scene').attr('src', jsonObj.img);
+        $('#scene').attr('useMap', 'scene-map');
+        var $map = $('<map>').attr('name', 'scene-map');
+        var map = jsonObj.map;
+        for(let i in map){
+            $map.append($('<area>').attr('shape', 'poly').attr('coords', map[i].coords).on("click", function(){
+                console.log(map[i].AID);
+                getAction(map[i].AID);
+            })).addClass('now');
+        }
+        $('body').append($map);
+        var item = jsonObj.item;
+        for(let i in item){
+            var $img = $('<img>');
+            $img.attr('src', item[i].imgurl);
+            $img.css('position', 'absolute');
+            $img.css('top', item[i].y);
+            $img.css('left', item[i].x);
+            $img.addClass('now');
+            $img.on("click", function(){
+                getAction(item[i].AID);
+            });
+            $('.stage').append($img);
+        }
+        if(isDoing){
+            cnt += 1;
+            doAction();
+        }
+    });
+    nowScene = SID;
+    Cookies.set('states.load_scene', SID);
+}
+
+</script>
+
+<div class="stage" style="height:<%= locals.game.height %>px;width:<%= locals.game.width %>px;">
+<div class="message">
+    <div class="between">
+        <div class="msg_box"></div>
+        <div class="next"></div>
+    </div>
+</div>
+<img src="http://placehold.it/599x367" id="scene"/>
+<div class="noSession">刪掉存檔</div>
+<div class="dontclick"></div>
+</div>
+
+</body>
+</html>
