@@ -11,7 +11,7 @@
         position:absolute;
         border-radius:2px;
         width:400px;
-        height:100px;
+        height:150px;
         bottom:110px;
         left:50%;
         margin-left:-200px;
@@ -20,7 +20,7 @@
 .between {
         position:absolute;
         width:380px;
-        height:80px;
+        height:130px;
         top:8px;
         left:8px;
         border-style:dashed;
@@ -29,10 +29,11 @@
 .msg_box {
         position:absolute;
         width:370px;
-        height:65px;
+        height:100px;
         top:4px;
         left:4px;
-        word-break: normal;
+        word-break: break-all;
+        word-wrap: break-word;
         overflow: auto;
 }
 .msg_person {

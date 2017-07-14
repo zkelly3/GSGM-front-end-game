@@ -39,7 +39,7 @@ app.get('/game/:GID', function(req, res) {
                     res.sendStatus(404);
                 }
                 else{
-                    req.session.game[req.params.GID] = {user:{}};
+                    req.session.game[req.params.GID] = {item:{}, progress:{}};
                     req.session.game[req.params.GID].nowScene = gameInfo.initSID;
                     res.render('GM_back', {
                         GID: req.params.GID,
@@ -67,7 +67,8 @@ app.post('/game/:GID/scene/:SID/action/:AID', function(req, res) {
     db.getActionData(req.params.AID)
         .then(function(str) {
             var actions = JSON.parse(str);
-            var f_actions = player.run(actions);
+            var f_actions = [];
+            player.run(actions, f_actions);
             console.log(f_actions);
             res.json(f_actions);
         });
